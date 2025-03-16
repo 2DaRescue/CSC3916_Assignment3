@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt'); // Use bcrypt, not bcrypt-nodejs
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.DB); // useNewUrlParser and useUnifiedTopology are no longer needed
-    console.log("Connected to MongoDB");
+    console.log("Connected to MongoDB-user");
   } catch (error) {
     console.error("MongoDB connection error:", error); // Log the actual error object
     process.exit(1); // Exit the process if the connection fails (optional, but good practice)
