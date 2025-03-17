@@ -16,6 +16,7 @@ function logout() {
 }
 
 export function submitLogin(data) {
+    console.log(data);
     return dispatch => {
         return fetch(`${env.REACT_APP_API_URL}/signin`, {
             method: 'POST',

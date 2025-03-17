@@ -29,6 +29,7 @@ const MovieSchema = new mongoose.Schema({
     actorName: String,
     characterName: String,
   }],
+  imageURL: { type: String, default: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" }, // ✅ New field for movie posters
 });
 
 
