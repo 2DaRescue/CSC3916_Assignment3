@@ -32,8 +32,8 @@ function Register() {
                 </Form.Group>
 
                 <Form.Group controlId="username">
-                    <Form.Label>Email</Form.Label>
-                    <Form.Control onChange={updateDetails} value={details.username} autoComplete="username" type="email" placeholder="Enter email" />
+                    <Form.Label>username</Form.Label>
+                    <Form.Control onChange={updateDetails} value={details.username} autoComplete="username" type="email" placeholder="username" />
                 </Form.Group>
 
                 <Form.Group controlId="password">

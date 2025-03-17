@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const User = require('./Users');
 const Movie = require('./Movies'); // You're not using Movie, consider removing it
+const { default: mongoose } = require('mongoose');
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,17 @@ app.use(passport.initialize());
 const router = express.Router();
 
 // Removed getJSONObjectForMovieRequirement as it's not used
+
+mongoose.connect(process.env.DB, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log("✅"))
+  .catch(err => console.error("❌", err));
+
+app.get("/", (req, res) => {
+  res.send("You made it !! --  Welcome to my API ");
+});
+
 
 router.post('/signup', async (req, res) => { // Use async/await
   if (!req.body.username || !req.body.password) {
@@ -69,18 +81,89 @@ router.post('/signin', async (req, res) => { // Use async/await
 });
 
 router.route('/movies')
+  .get(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movies = await Movie.find(); // Fetch all movies from MongoDB
+      return res.status(200).json(movies);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch movies', error: error.message });
+    }
+  })
+  .post(authJwtController.isAuthenticated, async (req, res) => {
+    const { title, releaseDate, genre, actors } = req.body;
+
+    const existingMovie = await Movie.findOne({ title });
+        if (existingMovie) {
+            return res.status(409).json({ success: false, message: "A movie with this title already exists." });
+        }
+        
+    // Validate that required fields exist
+    if (!title || !releaseDate || !genre || !actors || actors.length < 1) {
+      return res.status(400).json({ success: false, message: 'All fields including at least one actor are required' });
+    }
+
+    try {
+      const newMovie = new Movie({ title, releaseDate, genre, actors });
+      await newMovie.save();
+      res.status(201).json({ success: true, message: 'Movie added successfully', movie: newMovie });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Error saving movie', error: err });
+    }
+  });
+
+  router.route('/movies/:movieparameter')
+    // ✅ GET: Fetch a single movie by title (Requires JWT Authentication)
     .get(authJwtController.isAuthenticated, async (req, res) => {
-        return res.status(500).json({ success: false, message: 'GET request not supported' });
+        try {
+            const movie = await Movie.findOne({ title: req.params.movieparameter });
+            if (!movie) return res.status(404).json({ success: false, message: "Movie not found" });
+            res.status(200).json(movie);
+        } catch (err) {
+            res.status(500).json({ success: false, message: "Failed to fetch movie" });
+        }
     })
-    .post(authJwtController.isAuthenticated, async (req, res) => {
-        return res.status(500).json({ success: false, message: 'POST request not supported' });
+
+    // ✅ PUT: Update a movie by title (Requires JWT Authentication)
+    .put(authJwtController.isAuthenticated, async (req, res) => {
+        try {
+            const { title, releaseDate, genre, actors } = req.body;
+
+            const updatedMovie = await Movie.findOneAndUpdate(
+                { title: req.params.movieparameter }, // Find movie by title
+                { title, releaseDate, genre, actors }, // Update fields
+                { new: true } // Return the updated document
+            );
+
+            if (!updatedMovie) {
+                return res.status(404).json({ success: false, message: "Movie not found" });
+            }
+
+            res.status(200).json({ success: true, message: "Movie updated successfully", movie: updatedMovie });
+        } catch (err) {
+            res.status(500).json({ success: false, message: "Error updating movie" });
+        }
+    })
+
+    // ✅ DELETE: Remove a movie by title (Requires JWT Authentication)
+    .delete(authJwtController.isAuthenticated, async (req, res) => {
+        try {
+            const deletedMovie = await Movie.findOneAndDelete({ title: req.params.movieparameter });
+
+            if (!deletedMovie) {
+                return res.status(404).json({ success: false, message: "Movie not found" });
+            }
+
+            res.status(200).json({ success: true, message: `Movie '${deletedMovie.title}' deleted successfully` });
+        } catch (err) {
+            res.status(500).json({ success: false, message: "Failed to delete movie" });
+        }
     });
 
 app.use('/', router);
 
 const PORT = process.env.PORT || 8080; // Define PORT before using it
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port http://localhost:${PORT}`);
 });
 
 module.exports = app; // for testing only
