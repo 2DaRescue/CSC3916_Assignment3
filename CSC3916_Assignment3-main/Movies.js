@@ -15,7 +15,6 @@ connectDB();
 
 // Movie schema
 
-
 const MovieSchema = new mongoose.Schema({
   title: { type: String, required: true, index: true },
   releaseDate: { type: Number, min: [1900, 'Must be greater than 1899'], max: [2100, 'Must be less than 2100']},
@@ -29,7 +28,10 @@ const MovieSchema = new mongoose.Schema({
     actorName: String,
     characterName: String,
   }],
-  imageURL: { type: String }, // ✅ New field for movie posters
+  imageURL: { 
+    type: String, 
+    default: "https://wallpapercave.com/wp/wp5338281.jpg", // ✅ Correct default value syntax
+    index: true },
 });
 
 

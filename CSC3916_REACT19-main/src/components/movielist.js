@@ -41,7 +41,7 @@ function MovieList() {
                 to={`/movie/${movie._id}`}
                 onClick={() => handleClick(movie)}
               >
-                <Image className="image" src={movie.imageUrl} thumbnail />
+                <Image className="image" src={movie.imageURL} thumbnail />
               </Nav.Link>
               <Carousel.Caption>
                 <h3>{movie.title}</h3>

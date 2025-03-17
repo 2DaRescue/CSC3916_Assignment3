@@ -90,7 +90,7 @@ router.route('/movies')
     }
   })
   .post(authJwtController.isAuthenticated, async (req, res) => {
-    const { title, releaseDate, genre, actors } = req.body;
+    const { title, releaseDate, genre, actors, imageURL} = req.body;
 
     const existingMovie = await Movie.findOne({ title });
         if (existingMovie) {
@@ -103,7 +103,7 @@ router.route('/movies')
     }
 
     try {
-      const newMovie = new Movie({ title, releaseDate, genre, actors });
+      const newMovie = new Movie({ title, releaseDate, genre, actors,imageURL });
       await newMovie.save();
       res.status(201).json({ success: true, message: 'Movie added successfully', movie: newMovie });
     } catch (err) {
@@ -126,12 +126,13 @@ router.route('/movies')
     // ✅ PUT: Update a movie by title (Requires JWT Authentication)
     .put(authJwtController.isAuthenticated, async (req, res) => {
         try {
-            const { title, releaseDate, genre, actors } = req.body;
+            const { title, releaseDate, genre, actors, imageURL } = req.body;
 
             const updatedMovie = await Movie.findOneAndUpdate(
                 { title: req.params.movieparameter }, // Find movie by title
-                { title, releaseDate, genre, actors }, // Update fields
-                { new: true } // Return the updated document
+                { title, releaseDate, genre, actors, imageURL }, // Update fields
+                { new: true }, // Return the updated document
+                
             );
 
             if (!updatedMovie) {
