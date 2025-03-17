@@ -17,11 +17,14 @@ const connectDB = async () => {
 connectDB();
 
 
-const UserSchema = new Schema({
+
+const UserSchema = new mongoose.Schema({
     name: String,
-    username: { type: String, required: true, index: { unique: true } },
-    password: { type: String, required: true, select: false }
-});
+    username: { type: String, unique: true },
+    password: String, // this should be hashed in real-world scenario
+  });
+  
+  
 
 UserSchema.pre('save', async function(next) {  // Use async/await for cleaner code
     const user = this;
