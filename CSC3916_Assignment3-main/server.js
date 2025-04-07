@@ -194,13 +194,19 @@ router.route('/movies')
 
 // POST /reviews - Add a new review (Requires JWT auth)
 router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
-  const { movieId, username, review, rating } = req.body;
+  const { movieId, review, rating } = req.body;
+  const username = req.user.username; // 👈 pulled from token
 
   if (!movieId || !username || !review || rating == null) {
     return res.status(400).json({ message: 'movieId, username, review, and rating are all required.' });
   }
 
   try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const existingReview = await Review.findOne({ movieId, username });
     if (existingReview) {
       return res.status(409).json({ message: 'You have already reviewed this movie.' });
@@ -214,7 +220,6 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
     const newReview = new Review({ movieId, username, review, rating });
     await newReview.save();
 
-    //  Send Google Analytics Event
     await trackGA4ReviewEvent({
       movieTitle: movie.title,
       genre: movie.genre
@@ -223,7 +228,7 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
     res.status(201).json({ message: 'Review created!' });
 
   } catch (err) {
-    console.error(" Error posting review or tracking analytics:", err);
+    console.error("Error posting review or tracking analytics:", err);
     res.status(500).json({ message: 'Failed to save review', error: err.message });
   }
 });
