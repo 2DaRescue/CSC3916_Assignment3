@@ -214,15 +214,11 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
     await newReview.save();
 
     //  Send Google Analytics Event
-    await trackDimension(
-      movie.genre,                // category
-      '/reviews',                 // action
-      'API Request for Movie Review', // label
-      '1',                        // value
-      movie.title,                // dimension (cd1)
-      '1'                         // metric (cm1)
-    );
-
+    await trackGA4ReviewEvent({
+      movieTitle: movie.title,
+      genre: movie.genre
+    });
+    
     res.status(201).json({ message: 'Review created!' });
 
   } catch (err) {
@@ -263,6 +259,40 @@ router.delete('/reviews/:id', authJwtController.isAuthenticated, async (req, res
     res.status(500).json({ message: 'Failed to delete review', error: err.message });
   }
 });
+
+async function trackGA4ReviewEvent({ movieTitle, genre }) {
+  const measurementId = process.env.GA_MEASUREMENT_ID;
+  const apiSecret = process.env.GA_API_SECRET;
+
+  const payload = {
+    client_id: '555.123456', // Can be any anonymous stable value
+    events: [
+      {
+        name: 'review_submitted',
+        params: {
+          movie_title: movieTitle,
+          genre: genre,
+          engagement_time_msec: 1,
+          debug_mode: true //checking
+        }
+      }
+    ]
+  };
+
+  const url = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
+
+  try {
+    await rp({
+      method: 'POST',
+      uri: url,
+      body: payload,
+      json: true
+    });
+    console.log('✅ Sent review_submitted event to GA4');
+  } catch (err) {
+    console.error('❌ GA4 tracking error:', err.message);
+  }
+}
 
 app.use('/', router);
 
