@@ -173,6 +173,10 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
     return res.status(400).json({ message: 'movieId, review, and rating are required.' });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(movieId)) {
+    return res.status(400).json({ message: 'Invalid movieId format' });
+  }
+
   try {
     const movie = await Movie.findById(movieId);
     if (!movie) {
@@ -189,12 +193,16 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
 
     await trackReviewGA4(movie.title, movie.genre, username);
 
-    res.status(201).json({ message: 'Review created!' });
+    res.status(201).json({
+      message: 'Review created!',
+      review: newReview
+    });
   } catch (err) {
-    console.error("\u274C Error saving review or sending analytics:", err);
+    console.error("❌ Error saving review or sending analytics:", err);
     res.status(500).json({ message: 'Failed to save review', error: err.message });
   }
 });
+
 
 router.get('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   try {
