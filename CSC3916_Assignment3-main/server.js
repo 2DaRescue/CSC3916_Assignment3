@@ -196,7 +196,7 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   }
 });
 
-router.get('/reviews', async (req, res) => {
+router.get('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   try {
     const reviews = await Review.find();
     res.status(200).json(reviews);
