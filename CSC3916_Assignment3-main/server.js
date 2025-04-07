@@ -8,6 +8,7 @@ const cors = require('cors');
 const User = require('./Users');
 const Movie = require('./Movies'); // You're not using Movie, consider removing it
 const Review = require('./Reviews');
+const rp = require('request-promise');
 
 const { default: mongoose } = require('mongoose');
 
@@ -218,7 +219,7 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
       movieTitle: movie.title,
       genre: movie.genre
     });
-    
+
     res.status(201).json({ message: 'Review created!' });
 
   } catch (err) {
