@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const User = require('./Users');
 const Movie = require('./Movies'); // You're not using Movie, consider removing it
+const Review = require('./Reviews');
+
 const { default: mongoose } = require('mongoose');
 
 const app = express();
@@ -112,18 +114,45 @@ router.route('/movies')
   });
 
   router.route('/movies/:movieparameter')
-    // ✅ GET: Fetch a single movie by title (Requires JWT Authentication)
+    //  GET: Fetch a single movie by title (Requires JWT Authentication)
     .get(authJwtController.isAuthenticated, async (req, res) => {
-        try {
-            const movie = await Movie.findOne({ title: req.params.movieparameter });
-            if (!movie) return res.status(404).json({ success: false, message: "Movie not found" });
-            res.status(200).json(movie);
-        } catch (err) {
-            res.status(500).json({ success: false, message: "Failed to fetch movie" });
+      const includeReviews = req.query.reviews === 'true';
+    
+      try {
+        // Find the movie by title
+        const movie = await Movie.findOne({ title: req.params.movieparameter });
+    
+        if (!movie) {
+          return res.status(404).json({ success: false, message: 'Movie not found' });
         }
+    
+        // If `?reviews=true`, perform aggregation
+        if (includeReviews) {
+          const result = await Movie.aggregate([
+            { $match: { _id: movie._id } },
+            {
+              $lookup: {
+                from: 'reviews',
+                localField: '_id',
+                foreignField: 'movieId',
+                as: 'reviews'
+              }
+            }
+          ]);
+    
+          return res.status(200).json(result[0]); // return the movie with reviews
+        }
+    
+        // Otherwise, return just the movie
+        return res.status(200).json(movie);
+    
+      } catch (err) {
+        console.error('Aggregation error:', err);
+        return res.status(500).json({ success: false, message: 'Failed to fetch movie', error: err.message });
+      }
     })
-
-    // ✅ PUT: Update a movie by title (Requires JWT Authentication)
+    
+    // PUT: Update a movie by title (Requires JWT Authentication)
     .put(authJwtController.isAuthenticated, async (req, res) => {
         try {
             const { title, releaseDate, genre, actors, imageURL } = req.body;
@@ -145,7 +174,7 @@ router.route('/movies')
         }
     })
 
-    // ✅ DELETE: Remove a movie by title (Requires JWT Authentication)
+    // DELETE: Remove a movie by title (Requires JWT Authentication)
     .delete(authJwtController.isAuthenticated, async (req, res) => {
         try {
             const deletedMovie = await Movie.findOneAndDelete({ title: req.params.movieparameter });
@@ -159,6 +188,81 @@ router.route('/movies')
             res.status(500).json({ success: false, message: "Failed to delete movie" });
         }
     });
+
+    // REVIEWS ROUTES
+
+// POST /reviews - Add a new review (Requires JWT auth)
+router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+  const { movieId, username, review, rating } = req.body;
+
+  if (!movieId || !username || !review || rating == null) {
+    return res.status(400).json({ message: 'movieId, username, review, and rating are all required.' });
+  }
+
+  try {
+    const existingReview = await Review.findOne({ movieId, username });
+    if (existingReview) {
+      return res.status(409).json({ message: 'You have already reviewed this movie.' });
+    }
+
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      return res.status(404).json({ message: 'Movie not found for review' });
+    }
+
+    const newReview = new Review({ movieId, username, review, rating });
+    await newReview.save();
+
+    //  Send Google Analytics Event
+    await trackDimension(
+      movie.genre,                // category
+      '/reviews',                 // action
+      'API Request for Movie Review', // label
+      '1',                        // value
+      movie.title,                // dimension (cd1)
+      '1'                         // metric (cm1)
+    );
+
+    res.status(201).json({ message: 'Review created!' });
+
+  } catch (err) {
+    console.error(" Error posting review or tracking analytics:", err);
+    res.status(500).json({ message: 'Failed to save review', error: err.message });
+  }
+});
+
+
+// GET /reviews - Fetch all reviews (public)
+router.get('/reviews', async (req, res) => {
+  try {
+    const reviews = await Review.find();
+    res.status(200).json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch reviews', error: err.message });
+  }
+});
+
+router.delete('/reviews/:id', authJwtController.isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+
+  //Validate ObjectId format
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid review ID format' });
+  }
+
+  try {
+    const review = await Review.findById(id);
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    await Review.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Review deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete review', error: err.message });
+  }
+});
 
 app.use('/', router);
 
