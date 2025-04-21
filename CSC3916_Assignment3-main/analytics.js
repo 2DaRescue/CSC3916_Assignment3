@@ -15,7 +15,7 @@ async function trackReviewGA4(movieTitle, genre, userId = null) {
             api_route: "/reviews",
             label: "API Request for Movie Review",
             value: 1,
-            debug_mode: true // remove in production
+            //debug_mode: true // remove in production
           }
         }
       ]
