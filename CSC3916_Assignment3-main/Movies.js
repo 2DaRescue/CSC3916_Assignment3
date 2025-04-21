@@ -30,7 +30,7 @@ const MovieSchema = new mongoose.Schema({
   }],
   imageURL: { 
     type: String, 
-    default: "https://wallpapercave.com/wp/wp5338281.jpg", // ✅ Correct default value syntax
+    default: "https://wallpapercave.com/wp/wp5338281.jpg", 
     index: true },
 });
 

@@ -76,6 +76,39 @@ router.post('/signin', async (req, res) => {
 // ====================== MOVIES ======================
 router.route('/movies')
   .get(authJwtController.isAuthenticated, async (req, res) => {
+    const withReviews = req.query.reviews === 'true';
+
+    if (withReviews) {
+      try {
+        const movies = await Movie.aggregate([
+          {
+            $lookup: {
+              from: 'reviews',
+              localField: '_id',
+              foreignField: 'movieId',
+              as: 'reviews'
+            }
+          },
+          {
+            $addFields: {
+              avgRating: { $avg: '$reviews.rating' }
+            }
+          },
+          {
+            $sort: { avgRating: -1 }
+          }
+        ]);
+        return res.status(200).json(movies);
+      } catch (err) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to aggregate movies',
+          error: err.message
+        });
+      }
+    }
+
+    // fallback if no ?reviews=true
     try {
       const movies = await Movie.find();
       return res.status(200).json(movies);
@@ -83,6 +116,7 @@ router.route('/movies')
       return res.status(500).json({ success: false, message: 'Failed to fetch movies', error: error.message });
     }
   })
+
   .post(authJwtController.isAuthenticated, async (req, res) => {
     const { title, releaseDate, genre, actors, imageURL } = req.body;
 
@@ -107,32 +141,43 @@ router.route('/movies')
 router.route('/movies/:movieparameter')
   .get(authJwtController.isAuthenticated, async (req, res) => {
     const includeReviews = req.query.reviews === 'true';
-
+    console.log('🎯 Query Params:', req.query);
     try {
-      const movie = await Movie.findOne({ title: req.params.movieparameter });
+      const movie = await Movie.findOne({ title: req.params.movieparameter }); 
       if (!movie) return res.status(404).json({ success: false, message: 'Movie not found' });
 
       if (includeReviews) {
-        const result = await Movie.aggregate([
-          { $match: { _id: movie._id } },
-          {
-            $lookup: {
-              from: 'reviews',
-              localField: '_id',
-              foreignField: 'movieId',
-              as: 'reviews'
+        try {
+          const result = await Movie.aggregate([
+            { $match: { _id: movie._id } },
+            {
+              $lookup: {
+                from: 'reviews',
+                localField: '_id',
+                foreignField: 'movieId',
+                as: 'reviews'
+              }
+            },
+            {
+              $addFields: {
+                avgRating: { $avg: '$reviews.rating' }
+              }
             }
-          }
-        ]);
-        return res.status(200).json(result[0]);
+          ]);
+          return res.status(200).json(result[0]); // first match only
+        } catch (err) {
+          console.error('Aggregation error:', err);
+          return res.status(500).json({ success: false, message: 'Failed to aggregate movie', error: err.message });
+        }
       }
-
+      
       return res.status(200).json(movie);
     } catch (err) {
       console.error('Aggregation error:', err);
       return res.status(500).json({ success: false, message: 'Failed to fetch movie', error: err.message });
     }
   })
+  
   .put(authJwtController.isAuthenticated, async (req, res) => {
     try {
       const { title, releaseDate, genre, actors, imageURL } = req.body;
@@ -232,6 +277,27 @@ router.delete('/reviews/:id', authJwtController.isAuthenticated, async (req, res
   }
 });
 
+router.get('/search', authJwtController.isAuthenticated, async (req, res) => {
+  const { query } = req.query;
+
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ success: false, message: 'Query must be a non-empty string' });
+  }
+
+  try {
+    const movies = await Movie.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { 'actors.actorName': { $regex: query, $options: 'i' } }
+      ]
+    });
+
+    res.status(200).json(movies);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ success: false, message: 'Search failed', error: err.message });
+  }
+});
 app.use('/', router);
 
 const PORT = process.env.PORT || 8080;

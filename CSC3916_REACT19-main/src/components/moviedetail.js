@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { fetchMovie } from '../actions/movieActions';
+import { fetchMovie, submitReview } from '../actions/movieActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { Card, ListGroup, ListGroupItem, Image } from 'react-bootstrap';
 import { BsStarFill } from 'react-icons/bs';
 import { useParams } from 'react-router-dom'; // Import useParams
+import ReviewForm from './ReviewForm'; 
 
 const MovieDetail = () => {
   const dispatch = useDispatch();
@@ -30,13 +31,20 @@ const MovieDetail = () => {
       return <div>No movie data available.</div>;
     }
 
+    console.log("🎬 selectedMovie:", selectedMovie);
     return (
-      <Card className="bg-dark text-dark p-4 rounded">
+      <Card className="bg-dark text-light p-4 rounded">
         <Card.Header>Movie Detail</Card.Header>
         <Card.Body>
-          <Image className="image" src={selectedMovie.imageUrl} thumbnail />
+          <Image className="image" src={selectedMovie.imageURL} thumbnail />
+          <ReviewForm
+            movieId={movieId}
+            onSubmit={(data) =>
+              dispatch(submitReview(data)).then(() => dispatch(fetchMovie(movieId)))
+            }
+          />
         </Card.Body>
-        <ListGroup>
+        <ListGroup className="bg-dark text-dark p-4 rounded">
           <ListGroupItem>{selectedMovie.title}</ListGroupItem>
           <ListGroupItem>
             {selectedMovie.actors.map((actor, i) => (
@@ -52,13 +60,17 @@ const MovieDetail = () => {
           </ListGroupItem>
         </ListGroup>
         <Card.Body>
-          {selectedMovie.reviews.map((review, i) => (
-            <p key={i}>
-              <b>{review.username}</b>&nbsp; {review.review} &nbsp; <BsStarFill />{' '}
-              {review.rating}
-            </p>
-          ))}
-        </Card.Body>
+  <h5>Reviews</h5>
+  {Array.isArray(selectedMovie.movieReviews) && selectedMovie.movieReviews.length > 0 ? (
+  selectedMovie.movieReviews.map((review, i) => (
+              <p key={i}>
+                <b>{review.username}</b>&nbsp; {review.review} &nbsp; <BsStarFill /> {review.rating}
+              </p>
+            ))
+          ) : (
+            <p>No reviews yet.</p>
+          )}
+</Card.Body>
       </Card>
     );
   };

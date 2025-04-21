@@ -4,6 +4,7 @@ import { fetchMovies, setMovie } from "../actions/movieActions";
 import { Link } from 'react-router-dom';
 import { Image, Nav, Carousel } from 'react-bootstrap';
 import { BsStarFill } from 'react-icons/bs';
+import SearchBar from './searchbar.js';
 
 function MovieList() {
     const dispatch = useDispatch();
@@ -32,6 +33,8 @@ function MovieList() {
     }
 
     return (
+      <>
+      <SearchBar className="search-bar-container" />
         <Carousel onSelect={handleSelect} className="bg-dark text-light p-4 rounded">
           {memoizedMovies.map((movie) => (
             <Carousel.Item key={movie._id}>
@@ -50,6 +53,7 @@ function MovieList() {
             </Carousel.Item>
           ))}
         </Carousel>
+        </>
       );
     }
 
