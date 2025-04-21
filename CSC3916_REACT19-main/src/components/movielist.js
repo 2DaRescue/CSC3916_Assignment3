@@ -34,7 +34,7 @@ function MovieList() {
 
     return (
       <>
-      <SearchBar className="search-bar-container" />
+      <SearchBar />
         <Carousel onSelect={handleSelect} className="bg-dark text-light p-4 rounded">
           {memoizedMovies.map((movie) => (
             <Carousel.Item key={movie._id}>

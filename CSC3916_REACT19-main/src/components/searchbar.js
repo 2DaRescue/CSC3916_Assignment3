@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, InputGroup, ListGroup } from 'react-bootstrap';
+import { Form, InputGroup, Button, ListGroup } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import { searchMovies } from '../actions/movieActions';
 
@@ -44,7 +44,7 @@ const SearchBar = () => {
   };
 
   return (
-    <div className="search-bar-container" style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
+    <div style={{ maxWidth: '500px', margin: '0 auto', position: 'relative' }}>
       <Form onSubmit={handleSubmit}>
         <InputGroup>
           <Form.Control
@@ -53,21 +53,29 @@ const SearchBar = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <Button variant="primary" type="submit">Search</Button>
         </InputGroup>
       </Form>
 
       {showSuggestions && suggestions.length > 0 && (
-       <ListGroup className="suggestion-dropdown">
-       {suggestions.map((movie) => (
-         <ListGroup.Item
-           key={movie._id}
-           action
-           onClick={() => handleSelect(movie.title)}
-         >
-           {movie.title} ({movie.releaseDate})
-         </ListGroup.Item>
-       ))}
-     </ListGroup>
+        <ListGroup style={{
+          position: 'absolute',
+          top: '100%',
+          width: '100%',
+          zIndex: 5,
+          maxHeight: '200px',
+          overflowY: 'auto',
+        }}>
+          {suggestions.map((movie) => (
+            <ListGroup.Item
+              key={movie._id}
+              action
+              onClick={() => handleSelect(movie.title)}
+            >
+              {movie.title} ({movie.releaseDate})
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
       )}
     </div>
   );
