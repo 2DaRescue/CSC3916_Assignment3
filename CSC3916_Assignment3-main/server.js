@@ -143,7 +143,14 @@ router.route('/movies/:movieparameter')
     const includeReviews = req.query.reviews === 'true';
     console.log('🎯 Query Params:', req.query);
     try {
-      const movie = await Movie.findOne({ title: req.params.movieparameter }); 
+      let movie;
+const param = req.params.movieparameter;
+
+if (mongoose.Types.ObjectId.isValid(param)) {
+  movie = await Movie.findById(param);
+} else {
+  movie = await Movie.findOne({ title: param });
+}
       if (!movie) return res.status(404).json({ success: false, message: 'Movie not found' });
 
       if (includeReviews) {
