@@ -60,16 +60,16 @@ const MovieDetail = () => {
           </ListGroupItem>
         </ListGroup>
         <Card.Body>
-  <h5>Reviews</h5>
-  {Array.isArray(selectedMovie.movieReviews) && selectedMovie.movieReviews.length > 0 ? (
-  selectedMovie.movieReviews.map((review, i) => (
-              <p key={i}>
-                <b>{review.username}</b>&nbsp; {review.review} &nbsp; <BsStarFill /> {review.rating}
-              </p>
-            ))
-          ) : (
-            <p>No reviews yet.</p>
-          )}
+  <h5 style={{ color: "white" }} >Reviews</h5>
+  {Array.isArray(selectedMovie.reviews) && selectedMovie.reviews.length > 0 ? (
+    selectedMovie.reviews.map((review, i) => (
+      <p key={i} style={{ color: "white" }}>
+        <b>{review.username}</b> {review.review} <BsStarFill /> {review.rating}
+      </p>
+    ))
+  ) : (
+    <p style={{ color: "white" }}>There are no reviews yet, be the first to leave one!</p>
+  )}
 </Card.Body>
       </Card>
     );
